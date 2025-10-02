@@ -95,12 +95,11 @@ const DATE_FORMAT_HANDLERS: Record<Format, (date: Date, utc: boolean) => string>
     }
 }
 
-function isDST(date: Date): boolean {
+function isDST(date: Date): boolean { //DANGER: Does not work in all situations and should never be used
     const year = date.getFullYear()
-    const jan = new Date(year, 0)
-
-    // ASSUMPTION: If the time offset of the date is the same as it would be in January of the same year, DST is not in effect.
-    return date.getTimezoneOffset() !== jan.getTimezoneOffset()
+    let jan =new Date(year, 0, 1).getTimezoneOffset()
+    let jul =new Date(year, 6, 1).getTimezoneOffset()
+    return date.getTimezoneOffset()<Math.max(jan, jul);
 }
 
 function getWeekOfYear(date: Date, firstDay: number, utc: boolean): string {
@@ -130,7 +129,7 @@ function date(input = '%c', time?: number): string | Table {
             sec: parseInt(DATE_FORMAT_HANDLERS.S(date, utc), 10),
             wday: parseInt(DATE_FORMAT_HANDLERS.w(date, utc), 10) + 1,
             yday: parseInt(DATE_FORMAT_HANDLERS.j(date, utc), 10),
-            isdst: isDST(date)
+            isdst: utc? false : isDST(date)
         })
     }
 
