@@ -220,11 +220,17 @@ const generate = (node: luaparse.Node): string | MemExpr => {
         }
 
         case 'StringLiteral': {
-            const S = node.value
-                .replace(/([^\\])?\\(\d{1,3})/g, (_, pre, dec) => `${pre || ''}${String.fromCharCode(dec)}`)
-                .replace(/\\/g, '\\\\')
+            let S =node.raw.replace(/^[\'\"](.*)[\'\"]$/s, "$1")
+            if ( S.startsWith('[[') ) {
+                S =S
+                .replace(/^\[\[(.*)\]\]$/s, "$1")
+                .replace(/\\/g, "\\\\")
+            } else {
+                S =S
+                .replace(/(?<!\\)\\(?!\\)(\d{1,3})/g, (_, dec) => `${String.fromCharCode(dec)}`)
                 .replace(/`/g, '\\`')
-
+                .replace(/\'/g, '\\\'')
+            }
             return `\`${S}\``
         }
 
@@ -744,7 +750,7 @@ const parse = (data: string): string => {
         scope: false,
         comments: false,
         luaVersion: '5.3',
-        encodingMode: 'x-user-defined'
+        encodingMode: 'none'
     })
     checkGoto(ast)
     setExtraInfo(ast)

@@ -596,7 +596,8 @@ assertTrue (f == 'and', 'string.sub() should return a subset of the first argume
 assertTrue (h == 'Standard', 'string.sub() should return a subset of the first argument from the nth character to the last but mth character, when n is the second argument and positive and m is the third argument and negative')
 assertTrue (i == 'Pub Standards', 'string.sub() should return a subset of the first argument from the last but nth character to the last but mth character, when n is the second argument and negative and m is the third argument and negative')
 
-
+-- UTF
+assertTrue(string.sub('Привет мир!', 2, 4)=='рив', "UTF [801]")
 
 
 -- upper
