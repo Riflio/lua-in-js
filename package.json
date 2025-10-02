@@ -21,14 +21,16 @@
     "typings": "dist/types/index.d.ts",
     "repository": {
         "type": "git",
-        "url": "git://github.com/teoxoy/lua-in-js.git"
+        "url": "git://github.com/Riflio/lua-in-js.git"
     },
     "scripts": {
         "build": "rimraf dist && rollup -c rollup.config.js",
         "dev": "rimraf dist && rollup -c rollup.config.js -w",
         "test": "node ./tests/test.js",
         "lint": "eslint . --ignore-path .gitignore --ext .ts",
-        "lint:fix": "eslint . --ignore-path .gitignore --ext .ts --fix"
+        "lint:fix": "eslint . --ignore-path .gitignore --ext .ts --fix",
+        "prepare": "npm run build"
+
     },
     "dependencies": {
         "luaparse": "^0.3.1",
