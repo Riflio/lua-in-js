@@ -156,7 +156,7 @@ const generate = (node: luaparse.Node): string | MemExpr => {
                 const argsStr = params.length === 0 ? '' : '...args'
                 const returnStr =
                     node.body.findIndex(node => node.type === 'ReturnStatement') === -1 ? '\nreturn []' : ''
-                return `(${argsStr}) => {\n${body}${returnStr}\n}`
+                return `(${argsStr}) => {\n${body}${returnStr}\n}`;
             }
 
             const params = node.parameters.map(param => {
@@ -337,8 +337,12 @@ const generate = (node: luaparse.Node): string | MemExpr => {
                     : expression(node.type === 'TableCallExpression' ? node.arguments : node.argument)
 
             if (functionName instanceof MemExpr && node.base.type === 'MemberExpression' && node.base.indexer === ':') {
+
+                if ( functionName.indexOf("helloBuilder")>0 || functionName.indexOf("mytestfunction")>0 || functionName.indexOf("confShow")>0 || functionName.indexOf("confHandleEvent")>0 || functionName.indexOf("showView")>0) { return `await __lua.call(${functionName}, ${functionName.base}, ${args})`;  }
                 return `__lua.call(${functionName}, ${functionName.base}, ${args})`
             }
+
+            if ( functionName.indexOf("helloBuilder")>0 || functionName.indexOf("mytestfunction")>0 || functionName.indexOf("confShow")>0 || functionName.indexOf("confHandleEvent")>0 || functionName.indexOf("showView")>0) { return `await __lua.call(${functionName}, ${args})`;  }
 
             return `__lua.call(${functionName}, ${args})`
         }
@@ -400,16 +404,21 @@ const parseAssignments = (node: luaparse.LocalStatement | luaparse.AssignmentSta
         const K = node.variables[i]
         const V = node.init[i]
 
-        const initStr =
+        let initStr =
             // eslint-disable-next-line no-nested-ternary
             useTempVar ? `vars[${i}]` : V === undefined ? 'undefined' : expression(V)
 
+
         if (K.type === 'Identifier') {
+
+            if ( !!V && V.type=="FunctionDeclaration" ) { //-- Assign function to variable
+              if ( K.name==="mytestfunction" || K.name==="confShow" || K.name==="showView" || K.name==="confHandleEvent" ) { initStr ="async "+initStr; }
+            }
+
             const setStr = node.type === 'LocalStatement' ? 'setLocal' : 'set'
             lines.push(`$${nodeToScope.get(K)}.${setStr}('${K.name}', ${initStr})`)
         } else {
             const name = generate(K) as MemExpr
-
             if (useTempVar) {
                 lines.push(`vals[${valFns.length}](${initStr})`)
                 valFns.push(name.setFn())
@@ -433,7 +442,6 @@ const parseAssignments = (node: luaparse.LocalStatement | luaparse.AssignmentSta
             lines.unshift(`vals = [${valFns.join(', ')}]`)
         }
     }
-
     return lines.join(';\n')
 }
 

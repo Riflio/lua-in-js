@@ -14,14 +14,15 @@ import { LuaType, ensureArray, Config, hasOwnProperty } from './utils'
 import { parse as parseScript } from './parser'
 
 interface Script {
+    execAsync: () => Promise<LuaType>
     exec: () => LuaType
 }
 
 const call = (f: Function | Table, ...args: LuaType[]): LuaType[] => {
-    if (f instanceof Function) return ensureArray(f(...args))
+    if (f instanceof Function) { return ensureArray(f(...args)) }
 
     const mm = f instanceof Table && f.getMetaMethod('__call')
-    if (mm) return ensureArray(mm(f, ...args))
+    if (mm)  { return ensureArray(mm(f, ...args)) }
 
     throw new LuaError(`attempt to call an uncallable type`)
 }
@@ -33,7 +34,7 @@ const get = (t: Table | string, v: LuaType): LuaType => {
     if (t instanceof Table) return t.get(v)
     if (typeof t === 'string') return stringTable.get(v)
 
-    throw new LuaError(`no table or metatable found for given type`)
+    throw new LuaError(`no table or metatable found for given type ${t} ${v}`)
 }
 
 const execChunk = (_G: Table, chunk: string, chunkName?: string): LuaType[] => {
@@ -47,6 +48,22 @@ const execChunk = (_G: Table, chunk: string, chunkName?: string): LuaType[] => {
         call,
         get
     })
+    return res === undefined ? [undefined] : res
+}
+
+const execChunkAsync = async (_G: Table, chunk: string, chunkName?: string): Promise<LuaType[]> => {
+    const exec = new Function('__lua', 'return (async () => { '+chunk+' })();');
+    const globalScope = new Scope(_G.strValues).extend()
+    if (chunkName) globalScope.setVarargs([chunkName])
+
+    const res = await exec({
+        globalScope,
+        ...operators,
+        Table,
+        call,
+        get
+    })
+
     return res === undefined ? [undefined] : res
 }
 
@@ -108,7 +125,8 @@ function createEnv(
     const parse = (code: string): Script => {
         const script = parseScript(code)
         return {
-            exec: () => execChunk(_G, script)[0]
+            exec:  () => execChunk(_G, script)[0],
+            execAsync: async () => (await execChunkAsync(_G, script))[0]
         }
     }
 
